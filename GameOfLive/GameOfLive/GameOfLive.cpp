@@ -4,12 +4,23 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <SFML/Graphics.hpp>
 #include <windows.h>
 // #include <time.h>
 
-static int size=20;
+const int size = 30;
+const int windowSize = 900;
+float cellSize = windowSize / size;
+
+sf::Color deathCellColor = sf::Color(0, 0, 0);
+sf::Color deathCellBorderColor = sf::Color(76, 131, 153);
+sf::Color lifeCellColor = sf::Color(129, 195, 215);
+sf::Color lifeCellBorderColor = sf::Color(76, 131, 153);
+
 bool newFieldReady = true;
 bool startChangingField = false;
+bool setingField = true;
+
 
 void clear()
 {
@@ -29,12 +40,17 @@ void clear()
 
 void nextLifeCycle(bool **field)
 {
+    bool **nextField = new bool *[size];
+    for(int i = 0; i < size; i++) 
+        nextField[i] = new bool[size];
+
     while (true)
     {
-        // *newFieldReady = false;
-        bool **nextField = new bool *[size];
-        for (int i = 0; i < size; i++)
-            nextField[i] = new bool[size];
+        start:
+        while (setingField)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        }
 
         for (int i = 0; i < size; i++)
         {
@@ -89,33 +105,33 @@ void nextLifeCycle(bool **field)
             }
         }
 
-        while (!startChangingField)
+        if (!setingField)
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(5));
-        }
-
-        for (int i = 0; i < size; i++)
-        {
-            for (int j = 0; j < size; j++)
+            while (!startChangingField)
             {
-                field[i][j] = nextField[i][j];
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            }
+
+            for (int i = 0; i < size; i++)
+            {
+                for (int j = 0; j < size; j++)
+                {
+                    field[i][j] = nextField[i][j];
+                }
             }
         }
-
+        else{
+            goto start;
+        }
         startChangingField = false;
         newFieldReady = true;
-
-        for (int i = 0; i < size; ++i)
-        {
-            delete[] nextField[i];
-        }
-        delete[] nextField;
     }
 }
 
-void consoleDraw(bool **field)
+void consoleDraw(bool field[size][size])
 {
-    while(true){
+    while (true)
+    {
         while (!newFieldReady)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
@@ -129,22 +145,76 @@ void consoleDraw(bool **field)
             }
             std::cout << "\n";
         }
-        newFieldReady=false;
+        newFieldReady = false;
         startChangingField = true;
     }
 }
 
-void graphDraw(bool **field){
+void graphDraw(sf::RenderWindow *window, bool **field)
+{
+    // window->setActive(true);
 
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = 0; j < size; j++)
+        {
+            sf::RectangleShape rectangle(sf::Vector2f(cellSize, cellSize));
+            rectangle.setOutlineThickness(1);
+            rectangle.setPosition(cellSize * j, cellSize * i);
+
+            if (field[i][j])
+            {
+                rectangle.setFillColor(lifeCellColor);
+                rectangle.setOutlineColor(lifeCellBorderColor);
+            }
+            else
+            {
+                rectangle.setFillColor(deathCellColor);
+                rectangle.setOutlineColor(deathCellBorderColor);
+            }
+
+            window->draw(rectangle);
+        }
+    }
+
+    while (window->isOpen())
+    {
+        window->clear();
+        for (int i = 0; i < size; i++)
+        {
+            for (int j = 0; j < size; j++)
+            {
+                sf::RectangleShape rectangle(sf::Vector2f(cellSize, cellSize));
+                rectangle.setOutlineThickness(1);
+                rectangle.setPosition(cellSize * j, cellSize * i);
+
+                if (field[i][j])
+                {
+                    rectangle.setFillColor(lifeCellColor);
+                    rectangle.setOutlineColor(lifeCellBorderColor);
+                }
+                else
+                {
+                    rectangle.setFillColor(deathCellColor);
+                    rectangle.setOutlineColor(deathCellBorderColor);
+                }
+
+                window->draw(rectangle);
+            }
+        }
+        newFieldReady = false;
+        startChangingField = true;
+        window->display();
+    }
 }
 
 int main()
 {
-    // std::cout << "Hello World!\n";
     bool **field = new bool *[size];
-    for (int i = 0; i < size; i++)
+    for(int i = 0; i < size; i++) 
         field[i] = new bool[size];
 
+    sf::RenderWindow window(sf::VideoMode(windowSize, windowSize), "GameOfLife!", sf::Style::Titlebar);
     for (int i = 0; i < size; i++)
     {
         for (int j = 0; j < size; j++)
@@ -152,32 +222,45 @@ int main()
             field[i][j] = false;
         }
     }
-    field[0][1] = true;
-    field[1][2] = true;
-    field[2][0] = true;
-    field[2][1] = true;
-    field[2][2] = true;
 
-    // consoleDraw(field, sizeXY, &startChangingField, &newFieldReady);
-    std::thread draw(consoleDraw, field);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    std::thread cycleLife(nextLifeCycle,field);
-    while (true)
+    window.setActive(false);
+    std::thread draw(*graphDraw, &window, field);
+    // draw.launch();
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    std::thread cycleLife(nextLifeCycle, field);
+
+    while (window.isOpen())
     {
+        sf::Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed)
+                window.close();
+            if (event.type == sf::Event::KeyPressed && sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
+            {
+                setingField = !setingField;
+                if (setingField)
+                {
+                    deathCellColor = sf::Color(0, 0, 0);
+                    deathCellBorderColor = sf::Color(76, 131, 153);
+                    lifeCellColor = sf::Color(129, 195, 215);
+                    lifeCellBorderColor = sf::Color(76, 131, 153);
+                }
+                else
+                {
+                    deathCellColor = sf::Color(0, 0, 0);
+                    deathCellBorderColor = sf::Color(40, 40, 40);
+                    lifeCellColor = sf::Color(129, 195, 215);
+                    lifeCellBorderColor = sf::Color(76, 131, 153);
+                }
+            }
+            if (setingField && event.type == sf::Event::MouseButtonPressed && sf::Mouse::isButtonPressed(sf::Mouse::Left))
+            {
+               sf::Vector2i localPosition = sf::Mouse::getPosition(window);
+               field[(int)(localPosition.y / cellSize)][(int)(localPosition.x / cellSize)] = !field[(int)(localPosition.y / cellSize)][(int)(localPosition.x / cellSize)];
+            }
+        }
     }
 
-    // nextLifeCycle(field,sizeXY);
-    // field[15][950] = true;
-    // std::cout << field[15][951] << "\n";
+    getchar();
 }
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started:
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
