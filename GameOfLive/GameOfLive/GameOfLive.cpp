@@ -21,7 +21,6 @@ bool newFieldReady = true;
 bool startChangingField = false;
 bool setingField = true;
 
-
 void clear()
 {
     COORD topLeft = {0, 0};
@@ -41,12 +40,12 @@ void clear()
 void nextLifeCycle(bool **field)
 {
     bool **nextField = new bool *[size];
-    for(int i = 0; i < size; i++) 
+    for (int i = 0; i < size; i++)
         nextField[i] = new bool[size];
 
     while (true)
     {
-        start:
+    start:
         while (setingField)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
@@ -58,50 +57,28 @@ void nextLifeCycle(bool **field)
             {
                 int counter = 0;
                 if (field[(i + size + 1) % size][(j + size) % size])
-                {
                     counter++;
-                }
                 if (field[(i + size + 1) % size][(j + size + 1) % size])
-                {
                     counter++;
-                }
                 if (field[(i + size) % size][(j + size + 1) % size])
-                {
                     counter++;
-                }
                 if (field[(i + size - 1) % size][(j + size + 1) % size])
-                {
                     counter++;
-                }
                 if (field[(i + size - 1) % size][(j + size) % size])
-                {
                     counter++;
-                }
                 if (field[(i + size - 1) % size][(j + size - 1) % size])
-                {
                     counter++;
-                }
                 if (field[(i + size) % size][(j + size - 1) % size])
-                {
                     counter++;
-                }
                 if (field[(i + size + 1) % size][(j + size - 1) % size])
-                {
                     counter++;
-                }
-
+                
                 if (!field[(i + size) % size][(j + size) % size] && counter == 3)
-                {
                     nextField[i][j] = true;
-                }
                 else if (field[(i + size) % size][(j + size) % size] && (counter == 3 || counter == 2))
-                {
                     nextField[i][j] = true;
-                }
                 else
-                {
                     nextField[i][j] = false;
-                }
             }
         }
 
@@ -120,7 +97,8 @@ void nextLifeCycle(bool **field)
                 }
             }
         }
-        else{
+        else
+        {
             goto start;
         }
         startChangingField = false;
@@ -211,7 +189,7 @@ void graphDraw(sf::RenderWindow *window, bool **field)
 int main()
 {
     bool **field = new bool *[size];
-    for(int i = 0; i < size; i++) 
+    for (int i = 0; i < size; i++)
         field[i] = new bool[size];
 
     sf::RenderWindow window(sf::VideoMode(windowSize, windowSize), "GameOfLife!", sf::Style::Titlebar);
@@ -256,8 +234,8 @@ int main()
             }
             if (setingField && event.type == sf::Event::MouseButtonPressed && sf::Mouse::isButtonPressed(sf::Mouse::Left))
             {
-               sf::Vector2i localPosition = sf::Mouse::getPosition(window);
-               field[(int)(localPosition.y / cellSize)][(int)(localPosition.x / cellSize)] = !field[(int)(localPosition.y / cellSize)][(int)(localPosition.x / cellSize)];
+                sf::Vector2i localPosition = sf::Mouse::getPosition(window);
+                field[(int)(localPosition.y / cellSize)][(int)(localPosition.x / cellSize)] = !field[(int)(localPosition.y / cellSize)][(int)(localPosition.x / cellSize)];
             }
         }
     }
