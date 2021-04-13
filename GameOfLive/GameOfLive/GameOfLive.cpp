@@ -37,15 +37,15 @@ void clear()
     SetConsoleCursorPosition(console, topLeft);
 }
 
-void nextLifeCycle(bool **field)
+void nextLifeCycle(bool **field, sf::RenderWindow *window)
 {
     bool **nextField = new bool *[size];
     for (int i = 0; i < size; i++)
         nextField[i] = new bool[size];
 
-    while (true)
+    while (window -> isOpen())
     {
-    start:
+        start:
         while (setingField)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
@@ -104,6 +104,7 @@ void nextLifeCycle(bool **field)
         startChangingField = false;
         newFieldReady = true;
     }
+    return;
 }
 
 void consoleDraw(bool field[size][size])
@@ -184,6 +185,7 @@ void graphDraw(sf::RenderWindow *window, bool **field)
         startChangingField = true;
         window->display();
     }
+    return;
 }
 
 int main()
@@ -192,7 +194,7 @@ int main()
     for (int i = 0; i < size; i++)
         field[i] = new bool[size];
 
-    sf::RenderWindow window(sf::VideoMode(windowSize, windowSize), "GameOfLife!", sf::Style::Titlebar);
+    sf::RenderWindow window(sf::VideoMode(windowSize, windowSize), "GameOfLife!", sf::Style::Titlebar | sf::Style::Close);
     for (int i = 0; i < size; i++)
     {
         for (int j = 0; j < size; j++)
@@ -203,17 +205,19 @@ int main()
 
     window.setActive(false);
     std::thread draw(*graphDraw, &window, field);
-    // draw.launch();
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    std::thread cycleLife(nextLifeCycle, field);
+    std::thread cycleLife(nextLifeCycle, field, &window);
 
     while (window.isOpen())
     {
         sf::Event event;
         while (window.pollEvent(event))
         {
-            if (event.type == sf::Event::Closed)
-                window.close();
+            if (event.type == sf::Event::Closed){
+                // draw.join();
+                // cycleLife.join();
+                exit(0);
+            }
             if (event.type == sf::Event::KeyPressed && sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
             {
                 setingField = !setingField;
@@ -239,6 +243,4 @@ int main()
             }
         }
     }
-
-    getchar();
 }
