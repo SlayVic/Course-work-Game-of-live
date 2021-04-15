@@ -188,6 +188,34 @@ void graphDraw(sf::RenderWindow *window, bool **field)
     return;
 }
 
+void help(){
+    sf::RenderWindow window(sf::VideoMode(500, 110), "How to play!");
+    sf::Font font;
+    sf::Text text;
+    if (!font.loadFromFile("C:/Windows/Fonts/arial.ttf"))
+    {
+        exit(0);
+    }
+    text.setFont(font);
+    text.setString("When game start it on pause.\nPause changing - Space Bar\nWhen game on pause you can draw cells");
+    text.setCharacterSize(24); 
+    text.setFillColor(sf::Color::White);
+    text.setPosition(sf::Vector2f(10, 5));
+    while (window.isOpen())
+    {
+        sf::Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed){
+                window.close();
+            }
+        }
+        window.clear();
+        window.draw(text);
+        window.display();
+    }
+}
+
 int main()
 {
     bool **field = new bool *[size];
@@ -204,6 +232,7 @@ int main()
     }
 
     window.setActive(false);
+    std::thread helper(*help);
     std::thread draw(*graphDraw, &window, field);
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     std::thread cycleLife(nextLifeCycle, field, &window);
