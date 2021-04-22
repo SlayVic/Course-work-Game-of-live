@@ -216,27 +216,7 @@ void help(){
     }
 }
 
-int main()
-{
-    bool **field = new bool *[size];
-    for (int i = 0; i < size; i++)
-        field[i] = new bool[size];
-
-    sf::RenderWindow window(sf::VideoMode(windowSize, windowSize), "GameOfLife!", sf::Style::Titlebar | sf::Style::Close);
-    for (int i = 0; i < size; i++)
-    {
-        for (int j = 0; j < size; j++)
-        {
-            field[i][j] = false;
-        }
-    }
-
-    window.setActive(false);
-    std::thread helper(*help);
-    std::thread draw(*graphDraw, &window, field);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    std::thread cycleLife(nextLifeCycle, field, &window);
-
+void windowEvent(sf::RenderWindow &window, bool **field){
     while (window.isOpen())
     {
         sf::Event event;
@@ -272,4 +252,28 @@ int main()
             }
         }
     }
+}
+
+int main()
+{
+    bool **field = new bool *[size];
+    for (int i = 0; i < size; i++)
+        field[i] = new bool[size];
+
+    sf::RenderWindow window(sf::VideoMode(windowSize, windowSize), "GameOfLife!", sf::Style::Titlebar | sf::Style::Close);
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = 0; j < size; j++)
+        {
+            field[i][j] = false;
+        }
+    }
+
+    window.setActive(false);
+    std::thread helper(*help);
+    std::thread draw(*graphDraw, &window, field);
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    std::thread cycleLife(nextLifeCycle, field, &window);
+
+    windowEvent(window, field);
 }
