@@ -8,8 +8,10 @@
 #include <windows.h>
 // #include <time.h>
 
-const int size = 30;
-const int windowSize = 900;
+const clock_t simSpeed = 50;
+
+const int size = 35;
+const int windowSize = 910;
 float cellSize = windowSize / size;
 
 sf::Color deathCellColor = sf::Color(0, 0, 0);
@@ -50,6 +52,9 @@ void clear()
 
 void nextLifeCycle(bool **field, sf::RenderWindow *window)
 {
+    auto oldTime = clock();
+    auto deltaTime = clock() - oldTime;
+
     bool **nextField = new bool *[size];
     for (int i = 0; i < size; i++)
         nextField[i] = new bool[size];
@@ -92,6 +97,14 @@ void nextLifeCycle(bool **field, sf::RenderWindow *window)
                     nextField[i][j] = false;
             }
         }
+
+        do
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            deltaTime = clock() - oldTime;
+        } while (deltaTime < simSpeed);
+
+        oldTime = clock();
 
         if (!setingField)
         {
@@ -201,7 +214,7 @@ void graphDraw(sf::RenderWindow *window, bool **field)
 
 void help()
 {
-    sf::RenderWindow window(sf::VideoMode(500, 110), "How to play!");
+    sf::RenderWindow window(sf::VideoMode(500, 130), "How to play!");
     sf::Font font;
     sf::Text text;
     if (!font.loadFromFile("C:/Windows/Fonts/arial.ttf"))
@@ -209,7 +222,7 @@ void help()
         exit(0);
     }
     text.setFont(font);
-    text.setString("When game start it on pause.\nPause changing - Space Bar\nWhen game on pause you can draw cells");
+    text.setString("When game start it on pause.\nPause changing - Space Bar\nWhen game on pause you can draw cells\n'C' - clear field");
     text.setCharacterSize(24);
     text.setFillColor(sf::Color::White);
     text.setPosition(sf::Vector2f(10, 5));
@@ -281,7 +294,10 @@ void windowEvent(sf::RenderWindow &window, bool **field)
             if (setingField && sf::Mouse::isButtonPressed(sf::Mouse::Left))
             {
                 sf::Vector2i localPosition = sf::Mouse::getPosition(window);
-                field[(int)(localPosition.y / cellSize)][(int)(localPosition.x / cellSize)] = toSet;
+                if (localPosition.x > 0 && localPosition.x < windowSize)
+                    if (localPosition.y > 0 && localPosition.y < windowSize)
+                        if (field[(int)(localPosition.y / cellSize)][(int)(localPosition.x / cellSize)] != toSet)
+                            field[(int)(localPosition.y / cellSize)][(int)(localPosition.x / cellSize)] = toSet;
             }
         }
     }
