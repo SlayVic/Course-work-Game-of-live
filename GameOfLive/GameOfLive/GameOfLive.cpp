@@ -21,6 +21,17 @@ bool newFieldReady = true;
 bool startChangingField = false;
 bool setingField = true;
 
+void clearField(bool **field)
+{
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = 0; j < size; j++)
+        {
+            field[i][j] = false;
+        }
+    }
+}
+
 void clear()
 {
     COORD topLeft = {0, 0};
@@ -43,9 +54,9 @@ void nextLifeCycle(bool **field, sf::RenderWindow *window)
     for (int i = 0; i < size; i++)
         nextField[i] = new bool[size];
 
-    while (window -> isOpen())
+    while (window->isOpen())
     {
-        start:
+    start:
         while (setingField)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
@@ -72,7 +83,7 @@ void nextLifeCycle(bool **field, sf::RenderWindow *window)
                     counter++;
                 if (field[(i + size + 1) % size][(j + size - 1) % size])
                     counter++;
-                
+
                 if (!field[(i + size) % size][(j + size) % size] && counter == 3)
                     nextField[i][j] = true;
                 else if (field[(i + size) % size][(j + size) % size] && (counter == 3 || counter == 2))
@@ -188,7 +199,8 @@ void graphDraw(sf::RenderWindow *window, bool **field)
     return;
 }
 
-void help(){
+void help()
+{
     sf::RenderWindow window(sf::VideoMode(500, 110), "How to play!");
     sf::Font font;
     sf::Text text;
@@ -198,7 +210,7 @@ void help(){
     }
     text.setFont(font);
     text.setString("When game start it on pause.\nPause changing - Space Bar\nWhen game on pause you can draw cells");
-    text.setCharacterSize(24); 
+    text.setCharacterSize(24);
     text.setFillColor(sf::Color::White);
     text.setPosition(sf::Vector2f(10, 5));
     while (window.isOpen())
@@ -206,7 +218,8 @@ void help(){
         sf::Event event;
         while (window.pollEvent(event))
         {
-            if (event.type == sf::Event::Closed){
+            if (event.type == sf::Event::Closed)
+            {
                 window.close();
             }
         }
@@ -216,13 +229,16 @@ void help(){
     }
 }
 
-void windowEvent(sf::RenderWindow &window, bool **field){
+void windowEvent(sf::RenderWindow &window, bool **field)
+{
+    bool toSet = true;
     while (window.isOpen())
     {
         sf::Event event;
         while (window.pollEvent(event))
         {
-            if (event.type == sf::Event::Closed){
+            if (event.type == sf::Event::Closed)
+            {
                 // draw.join();
                 // cycleLife.join();
                 exit(0);
@@ -245,10 +261,27 @@ void windowEvent(sf::RenderWindow &window, bool **field){
                     lifeCellBorderColor = sf::Color(76, 131, 153);
                 }
             }
+            if (event.type == sf::Event::KeyPressed && sf::Keyboard::isKeyPressed(sf::Keyboard::C))
+            {
+                setingField = true;
+                deathCellColor = sf::Color(0, 0, 0);
+                deathCellBorderColor = sf::Color(76, 131, 153);
+                lifeCellColor = sf::Color(129, 195, 215);
+                lifeCellBorderColor = sf::Color(76, 131, 153);
+                std::this_thread::sleep_for(std::chrono::milliseconds(25));
+                clearField(field);
+            }
+
             if (setingField && event.type == sf::Event::MouseButtonPressed && sf::Mouse::isButtonPressed(sf::Mouse::Left))
             {
                 sf::Vector2i localPosition = sf::Mouse::getPosition(window);
-                field[(int)(localPosition.y / cellSize)][(int)(localPosition.x / cellSize)] = !field[(int)(localPosition.y / cellSize)][(int)(localPosition.x / cellSize)];
+                toSet = !field[(int)(localPosition.y / cellSize)][(int)(localPosition.x / cellSize)];
+            }
+
+            if (setingField && sf::Mouse::isButtonPressed(sf::Mouse::Left))
+            {
+                sf::Vector2i localPosition = sf::Mouse::getPosition(window);
+                field[(int)(localPosition.y / cellSize)][(int)(localPosition.x / cellSize)] = toSet;
             }
         }
     }
@@ -260,14 +293,9 @@ int main()
     for (int i = 0; i < size; i++)
         field[i] = new bool[size];
 
+    clearField(field);
+
     sf::RenderWindow window(sf::VideoMode(windowSize, windowSize), "GameOfLife!", sf::Style::Titlebar | sf::Style::Close);
-    for (int i = 0; i < size; i++)
-    {
-        for (int j = 0; j < size; j++)
-        {
-            field[i][j] = false;
-        }
-    }
 
     window.setActive(false);
     std::thread helper(*help);
