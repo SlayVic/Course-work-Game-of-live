@@ -14,9 +14,9 @@ const int windowSize = 910;
 float cellSize = windowSize / size;
 
 sf::Color deathCellColor = sf::Color(0, 0, 0);
-sf::Color deathCellBorderColor = sf::Color(76, 131, 153);
 sf::Color lifeCellColor = sf::Color(129, 195, 215);
-sf::Color lifeCellBorderColor = sf::Color(76, 131, 153);
+sf::Color borderColor = sf::Color(76, 131, 153);
+const int borderWide = 2;
 
 bool newFieldReady = true;
 bool startChangingField = false;
@@ -116,31 +116,6 @@ void nextLifeCycle(bool **field, sf::RenderWindow *window)
 
 void graphDraw(sf::RenderWindow *window, bool **field)
 {
-    // window->setActive(true);
-
-    for (int i = 0; i < size; i++)
-    {
-        for (int j = 0; j < size; j++)
-        {
-            sf::RectangleShape rectangle(sf::Vector2f(cellSize, cellSize));
-            rectangle.setOutlineThickness(1);
-            rectangle.setPosition(cellSize * j, cellSize * i);
-
-            if (field[i][j])
-            {
-                rectangle.setFillColor(lifeCellColor);
-                rectangle.setOutlineColor(lifeCellBorderColor);
-            }
-            else
-            {
-                rectangle.setFillColor(deathCellColor);
-                rectangle.setOutlineColor(deathCellBorderColor);
-            }
-
-            window->draw(rectangle);
-        }
-    }
-
     while (window->isOpen())
     {
         window->clear();
@@ -155,12 +130,12 @@ void graphDraw(sf::RenderWindow *window, bool **field)
                 if (field[i][j])
                 {
                     rectangle.setFillColor(lifeCellColor);
-                    rectangle.setOutlineColor(lifeCellBorderColor);
+                    rectangle.setOutlineColor(borderColor);
                 }
                 else
                 {
                     rectangle.setFillColor(deathCellColor);
-                    rectangle.setOutlineColor(deathCellBorderColor);
+                    rectangle.setOutlineColor(borderColor);
                 }
 
                 window->draw(rectangle);
@@ -222,26 +197,20 @@ void windowEvent(sf::RenderWindow &window, bool **field)
                 setingField = !setingField;
                 if (setingField)
                 {
-                    deathCellColor = sf::Color(0, 0, 0);
-                    deathCellBorderColor = sf::Color(76, 131, 153);
-                    lifeCellColor = sf::Color(129, 195, 215);
-                    lifeCellBorderColor = sf::Color(76, 131, 153);
+                    borderColor = sf::Color(76, 131, 153);
                 }
                 else
                 {
-                    deathCellColor = sf::Color(0, 0, 0);
-                    deathCellBorderColor = sf::Color(40, 40, 40);
-                    lifeCellColor = sf::Color(129, 195, 215);
-                    lifeCellBorderColor = sf::Color(76, 131, 153);
+                    borderColor = sf::Color(40, 40, 40);
                 }
             }
             if (event.type == sf::Event::KeyPressed && sf::Keyboard::isKeyPressed(sf::Keyboard::C))
             {
                 setingField = true;
                 deathCellColor = sf::Color(0, 0, 0);
-                deathCellBorderColor = sf::Color(76, 131, 153);
+                borderColor = sf::Color(76, 131, 153);
                 lifeCellColor = sf::Color(129, 195, 215);
-                lifeCellBorderColor = sf::Color(76, 131, 153);
+                borderColor = sf::Color(76, 131, 153);
                 std::this_thread::sleep_for(std::chrono::milliseconds(25));
                 clearField(field);
             }
