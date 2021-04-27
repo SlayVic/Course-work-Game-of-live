@@ -7,7 +7,7 @@
 #include <SFML/Graphics.hpp>
 // #include <time.h>
 
-const clock_t simSpeed = 50;
+const clock_t simSpeed = 20;
 
 const int size = 35;
 const int windowSize = 910;
@@ -16,7 +16,7 @@ float cellSize = windowSize / size;
 sf::Color deathCellColor = sf::Color(0, 0, 0);
 sf::Color lifeCellColor = sf::Color(129, 195, 215);
 sf::Color borderColor = sf::Color(76, 131, 153);
-const int borderWide = 2;
+const int borderWide = 1;
 
 bool newFieldReady = true;
 bool startChangingField = false;
@@ -116,36 +116,50 @@ void nextLifeCycle(bool **field, sf::RenderWindow *window)
 
 void graphDraw(sf::RenderWindow *window, bool **field)
 {
+    static sf::VertexArray quads;
+    static sf::VertexBuffer buffer(sf::Quads);
+
+    buffer.create(size * size * 4);
+    quads.setPrimitiveType(sf::Quads);
+    buffer.setUsage(sf::VertexBuffer::Usage::Stream);
+    quads.resize(size * size * 4);
     while (window->isOpen())
     {
-        window->clear();
+        window->clear(borderColor);
+
         for (int i = 0; i < size; i++)
         {
             for (int j = 0; j < size; j++)
             {
-                sf::RectangleShape rectangle(sf::Vector2f(cellSize, cellSize));
-                rectangle.setOutlineThickness(1);
-                rectangle.setPosition(cellSize * j, cellSize * i);
+                sf::Vertex *quad = &quads[(i + j * size) * 4];
+                quad[0].position = sf::Vector2f(j * cellSize + borderWide, i * cellSize + borderWide);
+                quad[1].position = sf::Vector2f((j + 1) * cellSize, i * cellSize + borderWide);
+                quad[2].position = sf::Vector2f((j + 1) * cellSize, (i + 1) * cellSize);
+                quad[3].position = sf::Vector2f(j * cellSize + borderWide, (i + 1) * cellSize);
 
                 if (field[i][j])
                 {
-                    rectangle.setFillColor(lifeCellColor);
-                    rectangle.setOutlineColor(borderColor);
+                    quad[0].color = lifeCellColor;
+                    quad[1].color = lifeCellColor;
+                    quad[2].color = lifeCellColor;
+                    quad[3].color = lifeCellColor;
                 }
                 else
                 {
-                    rectangle.setFillColor(deathCellColor);
-                    rectangle.setOutlineColor(borderColor);
+                    quad[0].color = deathCellColor;
+                    quad[1].color = deathCellColor;
+                    quad[2].color = deathCellColor;
+                    quad[3].color = deathCellColor;
                 }
-
-                window->draw(rectangle);
             }
         }
+
+        buffer.update(&quads[0]);
+        window->draw(buffer);
         newFieldReady = false;
         startChangingField = true;
         window->display();
     }
-    return;
 }
 
 void help()
