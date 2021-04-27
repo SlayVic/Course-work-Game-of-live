@@ -1,11 +1,7 @@
-// GameOfLife.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
 #include <iostream>
 #include <thread>
 #include <chrono>
 #include <SFML/Graphics.hpp>
-// #include <time.h>
 
 const clock_t simSpeed = 20;
 
@@ -202,8 +198,6 @@ void windowEvent(sf::RenderWindow &window, bool **field)
         {
             if (event.type == sf::Event::Closed)
             {
-                // draw.join();
-                // cycleLife.join();
                 exit(0);
             }
             if (event.type == sf::Event::KeyPressed && sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
