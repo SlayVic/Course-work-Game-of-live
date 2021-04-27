@@ -3,7 +3,7 @@
 #include <chrono>
 #include <SFML/Graphics.hpp>
 
-const clock_t simSpeed = 30;        //Min time between turns
+const clock_t simSpeed = 30; //Min time between turns
 
 const int size = 35;                // size of side of field
 const int windowSize = 910;         // window size of side
@@ -14,8 +14,8 @@ sf::Color lifeCellColor = sf::Color(129, 195, 215);
 sf::Color borderColor = sf::Color(76, 131, 153);
 const int borderWide = 1;
 
-bool startChangingField = false;    //
-bool setingField = true;            //
+bool startChangingField = false;
+bool setingField = true;
 
 // Set all cells as dead
 void clearField(bool **field)
@@ -94,17 +94,17 @@ void nextLifeCycle(bool **field, sf::RenderWindow *window)
                 // ------------------------------------------------------
 
                 if (!field[(i + size) % size][(j + size) % size] && counter == 3) // become live if 3 live cells around
-                    {
-                        nextField[i][j] = true;
-                        continue;
-                    }
+                {
+                    nextField[i][j] = true;
+                    continue;
+                }
                 if (field[(i + size) % size][(j + size) % size] && (counter == 3 || counter == 2)) // stay live if 2 or 3 live cells around
-                    {
-                        nextField[i][j] = true;
-                        continue;
-                    }
-                    // dead
-                    nextField[i][j] = false;
+                {
+                    nextField[i][j] = true;
+                    continue;
+                }
+                // dead
+                nextField[i][j] = false;
             }
         }
 
