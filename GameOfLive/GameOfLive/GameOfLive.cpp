@@ -1,7 +1,7 @@
+#include <SFML/Graphics.hpp>
 #include <iostream>
 #include <thread>
 #include <chrono>
-#include <SFML/Graphics.hpp>
 
 const clock_t simSpeed = 30; //Min time between turns
 
