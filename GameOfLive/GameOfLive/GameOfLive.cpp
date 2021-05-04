@@ -5,8 +5,8 @@
 
 const clock_t simSpeed = 30; //Min time between turns
 
-const int size = 35;                // size of side of field
-const int windowSize = 910;         // window size of side
+const int size = 40;                // size of side of field
+const int windowSize = 920;         // window size of side
 float cellSize = windowSize / size; // cell square size
 
 sf::Color deathCellColor = sf::Color(0, 0, 0);
@@ -253,6 +253,9 @@ void windowEvent(sf::RenderWindow &window, bool **field)
 
             if (setingField && event.type == sf::Event::MouseButtonPressed && sf::Mouse::isButtonPressed(sf::Mouse::Left)) // on LMB click
             {
+                if (event.type == sf::Event::GainedFocus) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(25));
+                }
                 sf::Vector2i localPosition = sf::Mouse::getPosition(window);                          // Get position of mouse
                 toSet = !field[(int)(localPosition.y / cellSize)][(int)(localPosition.x / cellSize)]; // memorize not cliced cell state
             }
