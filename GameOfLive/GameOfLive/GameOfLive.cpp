@@ -19,6 +19,12 @@ bool setingField = true;
 
 bool **nextField = new bool *[size];
 bool **oldField = new bool *[size];
+int currentTurn = 0;
+int maxTurn = 50;
+
+bool stopDraw = false;
+
+void pastTurnUpdate(bool **field);
 
 // Set all cells as dead
 void clearField(bool **field)
@@ -28,12 +34,17 @@ void clearField(bool **field)
         for (int j = 0; j < size; j++)
         {
             field[i][j] = false;
+            oldField[i][j] = false;
+            currentTurn = 0;
         }
     }
 }
 
-void nextLifeCycle(bool **field, bool wait = false)
+void nextLifeCycle(bool **field, bool wait = false, bool old = false)
 {
+    if (!old)
+        pastTurnUpdate(field);
+
     auto oldTime = clock();             // get time of start
     auto deltaTime = clock() - oldTime; // passed time
 
@@ -121,9 +132,10 @@ void nextLifeCycle(bool **field, bool wait = false)
             field[i][j] = nextField[i][j];
         }
     }
+    currentTurn++;
 }
 
-// Next turn
+// Next turn thread
 void nextLifeCycleThread(bool **field, sf::RenderWindow *window)
 {
     while (window->isOpen()) // while open
@@ -138,6 +150,54 @@ void nextLifeCycleThread(bool **field, sf::RenderWindow *window)
     }
 }
 
+void pastTurnSetField(bool **field)
+{
+    if (currentTurn > 0)
+    {
+        currentTurn = 0;
+        for (int i = 0; i < size; i++) // change old field with new
+        {
+            for (int j = 0; j < size; j++)
+            {
+                oldField[i][j] = field[i][j];
+            }
+        }
+    }
+}
+
+void pastTurnUpdate(bool **field)
+{
+    if (currentTurn >= maxTurn)
+    {
+        nextLifeCycle(oldField, false, true);
+        currentTurn = maxTurn;
+    }
+}
+
+void pastTurn(bool **field)
+{
+    stopDraw = true;
+    if (currentTurn > 0)
+    {
+        for (int i = 0; i < size; i++) // change old field with new
+        {
+            for (int j = 0; j < size; j++)
+            {
+                field[i][j] = oldField[i][j];
+            }
+        }
+
+        int turn = currentTurn - 1;
+        currentTurn = 0;
+        for (int i = 0; i < turn; i++)
+        {
+            nextLifeCycle(field);
+            currentTurn;
+        }
+    }
+    stopDraw = false;
+}
+
 // Draw mein window
 void graphDraw(sf::RenderWindow *window, bool **field)
 {
@@ -150,6 +210,10 @@ void graphDraw(sf::RenderWindow *window, bool **field)
     quads.resize(size * size * 4);                    // Set vertex array size
     while (window->isOpen())
     {
+        while (stopDraw) // wait if game on pause
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        }
         window->clear(borderColor); // clear windows with borderColor as beckground color
 
         for (int i = 0; i < size; i++)
@@ -198,11 +262,11 @@ void help()
     {
         exit(0); // If cant load, crush program
     }
-    text.setFont(font);                                                                                                                   // set font
+    text.setFont(font);                                                                                                                                                    // set font
     text.setString("When game start it on pause.\nPause changing - Space Bar\nWhen game on pause you can draw cells\n'C' - clear field\nRight arrow to make only 1 turn"); // Set text
-    text.setCharacterSize(24);                                                                                                            // set text size
-    text.setFillColor(sf::Color::White);                                                                                                  // set text color
-    text.setPosition(sf::Vector2f(10, 5));                                                                                                // set position, to make some void space around text
+    text.setCharacterSize(24);                                                                                                                                             // set text size
+    text.setFillColor(sf::Color::White);                                                                                                                                   // set text color
+    text.setPosition(sf::Vector2f(10, 5));                                                                                                                                 // set position, to make some void space around text
 
     while (window.isOpen()) // While window is open
     {
@@ -256,21 +320,30 @@ void windowEvent(sf::RenderWindow &window, bool **field)
             {
                 if (event.type == sf::Event::MouseButtonPressed && sf::Mouse::isButtonPressed(sf::Mouse::Left)) // on LMB click
                 {
+                    pastTurnSetField(field);
                     sf::Vector2i localPosition = sf::Mouse::getPosition(window);                          // Get position of mouse
                     toSet = !field[(int)(localPosition.y / cellSize)][(int)(localPosition.x / cellSize)]; // memorize not cliced cell state
                 }
 
                 if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) // LBM pressed
                 {
-                    sf::Vector2i localPosition = sf::Mouse::getPosition(window);                                 // Get position
-                    if (localPosition.x > 0 && localPosition.x < windowSize)                                     // If in window at x coords
-                        if (localPosition.y > 0 && localPosition.y < windowSize)                                 // If in window at y coords
+                    sf::Vector2i localPosition = sf::Mouse::getPosition(window); // Get position
+                    if (localPosition.x > 0 && localPosition.x < windowSize)     // If in window at x coords
+                        if (localPosition.y > 0 && localPosition.y < windowSize) // If in window at y coords
+                        {
                             field[(int)(localPosition.y / cellSize)][(int)(localPosition.x / cellSize)] = toSet; // Set cell state to memorized state
+                            oldField[(int)(localPosition.y / cellSize)][(int)(localPosition.x / cellSize)] = toSet;
+                            currentTurn = 0;
+                        }
                 }
 
                 if (event.type == sf::Event::KeyPressed && sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
                 {
                     nextLifeCycle(field, false);
+                }
+                if (event.type == sf::Event::KeyPressed && sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+                {
+                    pastTurn(field);
                 }
             }
         }
