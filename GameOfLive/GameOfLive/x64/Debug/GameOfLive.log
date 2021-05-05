@@ -1,2 +1,6 @@
 ﻿  GameOfLive.cpp
+c:\dev\game-of-life\gameoflive\gameoflive\gameoflive.cpp(267): warning C4129: 'P': unrecognized character escape sequence
+c:\dev\game-of-life\gameoflive\gameoflive\gameoflive.cpp(268): warning C4129: 'W': unrecognized character escape sequence
+c:\dev\game-of-life\gameoflive\gameoflive\gameoflive.cpp(270): warning C4129: 'R': unrecognized character escape sequence
+c:\dev\game-of-life\gameoflive\gameoflive\gameoflive.cpp(271): warning C4129: 'L': unrecognized character escape sequence
   GameOfLive.vcxproj -> C:\Dev\Game-of-Life\GameOfLive\x64\Debug\GameOfLive.exe

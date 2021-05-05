@@ -255,7 +255,7 @@ void graphDraw(sf::RenderWindow *window, bool **field)
 // Helping window
 void help()
 {
-    sf::RenderWindow window(sf::VideoMode(500, 160), "How to play!", sf::Style::Titlebar | sf::Style::Close); // Create helping window
+    sf::RenderWindow window(sf::VideoMode(500, 180), "How to play!", sf::Style::Titlebar | sf::Style::Close); // Create helping window
     sf::Font font;
     sf::Text text;
     if (!font.loadFromFile("C:/Windows/Fonts/arial.ttf")) // load font
@@ -263,7 +263,12 @@ void help()
         exit(0); // If cant load, crush program
     }
     text.setFont(font);                                                                                                                                                    // set font
-    text.setString("When game start it on pause.\nPause changing - Space Bar\nWhen game on pause you can draw cells\n'C' - clear field\nRight arrow to make only 1 turn"); // Set text
+    text.setString("When game start it on pause.\n\\
+Pause changing - Space Bar\n\\
+When game on pause you can draw cells\n\\
+'C' - clear field\n\\
+Right arrow to make only 1 turn\n\\
+Left Arrow will make time rerun"); // Set text
     text.setCharacterSize(24);                                                                                                                                             // set text size
     text.setFillColor(sf::Color::White);                                                                                                                                   // set text color
     text.setPosition(sf::Vector2f(10, 5));                                                                                                                                 // set position, to make some void space around text
