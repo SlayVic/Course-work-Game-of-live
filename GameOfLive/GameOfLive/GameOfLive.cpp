@@ -17,6 +17,9 @@ const int borderWide = 1;
 bool startChangingField = false;
 bool setingField = true;
 
+bool **nextField = new bool *[size];
+bool **oldField = new bool *[size];
+
 // Set all cells as dead
 void clearField(bool **field)
 {
@@ -29,31 +32,19 @@ void clearField(bool **field)
     }
 }
 
-// Next turn
-void nextLifeCycle(bool **field, sf::RenderWindow *window)
+void nextLifeCycle(bool **field, bool wait = false)
 {
     auto oldTime = clock();             // get time of start
     auto deltaTime = clock() - oldTime; // passed time
 
-    bool **nextField = new bool *[size]; // next turn field
+    // calculate next turn
     for (int i = 0; i < size; i++)
-        nextField[i] = new bool[size];
-
-    while (window->isOpen()) // while open
     {
-        while (setingField) // wait if game on pause
+        for (int j = 0; j < size; j++)
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(5));
-        }
+            int counter = 0; // count live cells around cell
 
-        // calculate next turn
-        for (int i = 0; i < size; i++)
-        {
-            for (int j = 0; j < size; j++)
-            {
-                int counter = 0; // count live cells around cell
-
-                /*
+            /*
                  (n + size + shift) % size
                  math funcion that make infinit move around field from 0 to size [0,size)
                  n - current number
@@ -74,65 +65,75 @@ void nextLifeCycle(bool **field, sf::RenderWindow *window)
                  4 % 6 = 4
                 */
 
-                // count amount of live cells around
-                if (field[(i + size + 1) % size][(j + size) % size])
-                    counter++;
-                if (field[(i + size + 1) % size][(j + size + 1) % size])
-                    counter++;
-                if (field[(i + size) % size][(j + size + 1) % size])
-                    counter++;
-                if (field[(i + size - 1) % size][(j + size + 1) % size])
-                    counter++;
-                if (field[(i + size - 1) % size][(j + size) % size])
-                    counter++;
-                if (field[(i + size - 1) % size][(j + size - 1) % size])
-                    counter++;
-                if (field[(i + size) % size][(j + size - 1) % size])
-                    counter++;
-                if (field[(i + size + 1) % size][(j + size - 1) % size])
-                    counter++;
-                // ------------------------------------------------------
+            // count amount of live cells around
+            if (field[(i + size + 1) % size][(j + size) % size])
+                counter++;
+            if (field[(i + size + 1) % size][(j + size + 1) % size])
+                counter++;
+            if (field[(i + size) % size][(j + size + 1) % size])
+                counter++;
+            if (field[(i + size - 1) % size][(j + size + 1) % size])
+                counter++;
+            if (field[(i + size - 1) % size][(j + size) % size])
+                counter++;
+            if (field[(i + size - 1) % size][(j + size - 1) % size])
+                counter++;
+            if (field[(i + size) % size][(j + size - 1) % size])
+                counter++;
+            if (field[(i + size + 1) % size][(j + size - 1) % size])
+                counter++;
+            // ------------------------------------------------------
 
-                if (!field[(i + size) % size][(j + size) % size] && counter == 3) // become live if 3 live cells around
-                {
-                    nextField[i][j] = true;
-                    continue;
-                }
-                if (field[(i + size) % size][(j + size) % size] && (counter == 3 || counter == 2)) // stay live if 2 or 3 live cells around
-                {
-                    nextField[i][j] = true;
-                    continue;
-                }
-                // dead
-                nextField[i][j] = false;
+            if (!field[(i + size) % size][(j + size) % size] && counter == 3) // become live if 3 live cells around
+            {
+                nextField[i][j] = true;
+                continue;
             }
+            if (field[(i + size) % size][(j + size) % size] && (counter == 3 || counter == 2)) // stay live if 2 or 3 live cells around
+            {
+                nextField[i][j] = true;
+                continue;
+            }
+            // dead
+            nextField[i][j] = false;
         }
+    }
 
-        // wait if calculate end to fast, and we want to make simulation slower
+    // wait if calculate end to fast, and we want to make simulation slower
+    if (wait)
         do
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
             deltaTime = clock() - oldTime;
         } while (deltaTime < simSpeed);
 
-        oldTime = clock();
-
-        // If not paused
-        if (!setingField)
+    oldTime = clock();
+    if (wait)
+        while (!startChangingField) // Wait while window drawing old field
         {
-            while (!startChangingField) // Wait while window drawing old field
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(5));
-            }
-
-            for (int i = 0; i < size; i++) // change old field with new
-            {
-                for (int j = 0; j < size; j++)
-                {
-                    field[i][j] = nextField[i][j];
-                }
-            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
+
+    for (int i = 0; i < size; i++) // change old field with new
+    {
+        for (int j = 0; j < size; j++)
+        {
+            field[i][j] = nextField[i][j];
+        }
+    }
+}
+
+// Next turn
+void nextLifeCycleThread(bool **field, sf::RenderWindow *window)
+{
+    while (window->isOpen()) // while open
+    {
+        nextLifeCycle(field, true);
+        while (setingField) // wait if game on pause
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        }
+
         startChangingField = false; // Say that field ready to draw
     }
 }
@@ -190,7 +191,7 @@ void graphDraw(sf::RenderWindow *window, bool **field)
 // Helping window
 void help()
 {
-    sf::RenderWindow window(sf::VideoMode(500, 130), "How to play!", sf::Style::Titlebar | sf::Style::Close); // Create helping window
+    sf::RenderWindow window(sf::VideoMode(500, 160), "How to play!", sf::Style::Titlebar | sf::Style::Close); // Create helping window
     sf::Font font;
     sf::Text text;
     if (!font.loadFromFile("C:/Windows/Fonts/arial.ttf")) // load font
@@ -198,7 +199,7 @@ void help()
         exit(0); // If cant load, crush program
     }
     text.setFont(font);                                                                                                                   // set font
-    text.setString("When game start it on pause.\nPause changing - Space Bar\nWhen game on pause you can draw cells\n'C' - clear field"); // Set text
+    text.setString("When game start it on pause.\nPause changing - Space Bar\nWhen game on pause you can draw cells\n'C' - clear field\nRight arrow to make only 1 turn"); // Set text
     text.setCharacterSize(24);                                                                                                            // set text size
     text.setFillColor(sf::Color::White);                                                                                                  // set text color
     text.setPosition(sf::Vector2f(10, 5));                                                                                                // set position, to make some void space around text
@@ -251,21 +252,26 @@ void windowEvent(sf::RenderWindow &window, bool **field)
                 clearField(field);                                          // clear field
             }
 
-            if (setingField && event.type == sf::Event::MouseButtonPressed && sf::Mouse::isButtonPressed(sf::Mouse::Left)) // on LMB click
+            if (setingField)
             {
-                if (event.type == sf::Event::GainedFocus) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(25));
+                if (event.type == sf::Event::MouseButtonPressed && sf::Mouse::isButtonPressed(sf::Mouse::Left)) // on LMB click
+                {
+                    sf::Vector2i localPosition = sf::Mouse::getPosition(window);                          // Get position of mouse
+                    toSet = !field[(int)(localPosition.y / cellSize)][(int)(localPosition.x / cellSize)]; // memorize not cliced cell state
                 }
-                sf::Vector2i localPosition = sf::Mouse::getPosition(window);                          // Get position of mouse
-                toSet = !field[(int)(localPosition.y / cellSize)][(int)(localPosition.x / cellSize)]; // memorize not cliced cell state
-            }
 
-            if (setingField && sf::Mouse::isButtonPressed(sf::Mouse::Left)) // LBM pressed
-            {
-                sf::Vector2i localPosition = sf::Mouse::getPosition(window);                                 // Get position
-                if (localPosition.x > 0 && localPosition.x < windowSize)                                     // If in window at x coords
-                    if (localPosition.y > 0 && localPosition.y < windowSize)                                 // If in window at y coords
-                        field[(int)(localPosition.y / cellSize)][(int)(localPosition.x / cellSize)] = toSet; // Set cell state to memorized state
+                if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) // LBM pressed
+                {
+                    sf::Vector2i localPosition = sf::Mouse::getPosition(window);                                 // Get position
+                    if (localPosition.x > 0 && localPosition.x < windowSize)                                     // If in window at x coords
+                        if (localPosition.y > 0 && localPosition.y < windowSize)                                 // If in window at y coords
+                            field[(int)(localPosition.y / cellSize)][(int)(localPosition.x / cellSize)] = toSet; // Set cell state to memorized state
+                }
+
+                if (event.type == sf::Event::KeyPressed && sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+                {
+                    nextLifeCycle(field, false);
+                }
             }
         }
     }
@@ -273,6 +279,12 @@ void windowEvent(sf::RenderWindow &window, bool **field)
 
 int main()
 {
+    for (int i = 0; i < size; i++)
+        oldField[i] = new bool[size];
+
+    for (int i = 0; i < size; i++)
+        nextField[i] = new bool[size];
+
     bool **field = new bool *[size]; // make array of arrays
     for (int i = 0; i < size; i++)   // place array to all array of arrays objects
         field[i] = new bool[size];
@@ -285,7 +297,7 @@ int main()
     std::thread helper(*help);                                  // Control helping window thread
     std::thread draw(*graphDraw, &window, field);               // Drawind thread
     std::this_thread::sleep_for(std::chrono::milliseconds(50)); // wait
-    std::thread cycleLife(nextLifeCycle, field, &window);       // calculate next turn thread
+    std::thread cycleLife(nextLifeCycleThread, field, &window); // calculate next turn thread
 
     windowEvent(window, field); // Main window event system
 }
